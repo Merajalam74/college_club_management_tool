@@ -93,22 +93,25 @@ if menu == "🏠 Dashboard":
     st.subheader("📊 Club Participation Comparison")
 
     if "Club 1" in df.columns and "Club 2" in df.columns:
-    clubs = pd.concat([df["Club 1"], df["Club 2"]]).dropna()
-    club_counts = clubs.value_counts().reset_index()
-    club_counts.columns = ["Club", "Count"]
+        clubs = pd.concat([df["Club 1"], df["Club 2"]]).dropna()
+        club_counts = clubs.value_counts().reset_index()
+        club_counts.columns = ["Club", "Count"]
 
-    chart = (
-        alt.Chart(club_counts)
-        .mark_bar()
-        .encode(
-            x=alt.X("Club", sort="-y", title="Club"),
-            y=alt.Y("Count", title="Number of Students"),
-            tooltip=["Club", "Count"]
+        chart = (
+            alt.Chart(club_counts)
+            .mark_bar()
+            .encode(
+                x=alt.X("Club", sort="-y", title="Club"),
+                y=alt.Y("Count", title="Number of Students"),
+                tooltip=["Club", "Count"]
+            )
+            .properties(width=600, height=400, title="Club Participation")
         )
-        .properties(width=600, height=400, title="Club Participation")
-    )
-    st.altair_chart(chart, use_container_width=True)
-
+        st.altair_chart(chart, use_container_width=True)
+        
+    else:
+        st.warning("⚠️ Club columns not found in the sheet.")
+        
     if not df.empty:
         st.subheader("📊 Latest Responses")
         st.dataframe(df.tail(5), use_container_width=True)
