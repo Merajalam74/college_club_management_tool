@@ -6,6 +6,7 @@ College Club Management Tool
 
 import streamlit as st
 import pandas as pd
+import matplotlib.pyplot as plt
 import requests
 import io
 
@@ -96,7 +97,15 @@ if menu == "🏠 Dashboard":
         club_counts = clubs.value_counts().reset_index()
         club_counts.columns = ["Club", "Count"]
 
-        st.bar_chart(club_counts.set_index("Club"))
+        # ✅ Matplotlib static chart
+        fig, ax = plt.subplots(figsize=(8, 5))
+        ax.bar(club_counts["Club"], club_counts["Count"])
+        ax.set_xlabel("Club")
+        ax.set_ylabel("Number of Students")
+        ax.set_title("Club Participation")
+        plt.xticks(rotation=45, ha="right")
+
+        st.pyplot(fig)  # render in Streamlit
     else:
         st.warning("⚠️ Club columns not found in the sheet.")
 
