@@ -54,7 +54,6 @@ df = pd.read_csv(csv_url)
 df.columns = df.columns.str.strip()
 
 # ---------------------- OWNER CONFIG ----------------------
-OWNER_PIN = "1234"   # 🔑 set your own PIN for authentication
 OWNER_ACTIVITY_FORM_URL = "https://forms.gle/uWH3JUhz1jMh8t4PA"
 USE_SHEETS_API_FOR_ACTIVITY_POST = False  # keep False unless you want API posting
 
@@ -75,6 +74,7 @@ menu = st.sidebar.radio(
         "🏆 Search by Club",
         "✅ Students Joined At Least One Club",
         "🚫 Students Who Have Not Responded",
+        "🔁 Duplicate Registrations", 
         "💬 Message Panel "
     ]
 )
@@ -190,6 +190,31 @@ elif menu == "🚫 Students Who Have Not Responded":
             st.success("🎉 All students have responded!")
     else:
         st.error("⚠️ Could not load All Students Excel. Please check the Drive link.")
+# ---------------------- DUPLICATE REGISTRATIONS ----------------------
+elif menu == "🔁 Duplicate Registrations":
+    st.title("🔁 Duplicate Registrations")
+
+    if "Registration Number" in df.columns:
+        duplicates = df[df.duplicated(subset=["Registration Number"], keep=False)]
+        
+        if not duplicates.empty:
+            st.warning("⚠️ Found students with duplicate registrations")
+            st.dataframe(
+                duplicates.sort_values("Registration Number"),
+                use_container_width=True
+            )
+
+            # Group to show how many times each reg no appears
+            dup_counts = duplicates["Registration Number"].value_counts().reset_index()
+            dup_counts.columns = ["Registration Number", "Count"]
+
+            st.subheader("📊 Duplicate Counts")
+            st.table(dup_counts)
+
+        else:
+            st.success("🎉 No duplicate registrations found!")
+    else:
+        st.error("⚠️ Column 'Registration Number' not found in the sheet.")        
 # ---------------------- CLUB OWNER PANEL ----------------------
 elif menu == "💬 Message Panel ":
     st.title("💬 Message Panel")
