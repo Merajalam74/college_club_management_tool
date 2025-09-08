@@ -6,7 +6,7 @@ College Club Management Tool
 
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
+import altair as alt
 import requests
 import io
 
@@ -93,21 +93,21 @@ if menu == "🏠 Dashboard":
     st.subheader("📊 Club Participation Comparison")
 
     if "Club 1" in df.columns and "Club 2" in df.columns:
-        clubs = pd.concat([df["Club 1"], df["Club 2"]]).dropna()
-        club_counts = clubs.value_counts().reset_index()
-        club_counts.columns = ["Club", "Count"]
+    clubs = pd.concat([df["Club 1"], df["Club 2"]]).dropna()
+    club_counts = clubs.value_counts().reset_index()
+    club_counts.columns = ["Club", "Count"]
 
-        # ✅ Matplotlib static chart
-        fig, ax = plt.subplots(figsize=(8, 5))
-        ax.bar(club_counts["Club"], club_counts["Count"])
-        ax.set_xlabel("Club")
-        ax.set_ylabel("Number of Students")
-        ax.set_title("Club Participation")
-        plt.xticks(rotation=45, ha="right")
-
-        st.pyplot(fig)  # render in Streamlit
-    else:
-        st.warning("⚠️ Club columns not found in the sheet.")
+    chart = (
+        alt.Chart(club_counts)
+        .mark_bar()
+        .encode(
+            x=alt.X("Club", sort="-y", title="Club"),
+            y=alt.Y("Count", title="Number of Students"),
+            tooltip=["Club", "Count"]
+        )
+        .properties(width=600, height=400, title="Club Participation")
+    )
+    st.altair_chart(chart, use_container_width=True)
 
     if not df.empty:
         st.subheader("📊 Latest Responses")
