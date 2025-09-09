@@ -46,23 +46,17 @@ st.markdown("""
 }
 </style>
 """, unsafe_allow_html=True)
-
+csv_url = st.secrets["links"]["responses_csv"]
+all_students_link = st.secrets["links"]["students_csv"]
+OWNER_ACTIVITY_FORM_URL = st.secrets["links"]["activity_form"]
 # ---------------------- DATA LOAD ----------------------
-# Google Form response sheet (replace with yours)
-csv_url = "https://docs.google.com/spreadsheets/d/1ZgOV7SHOX8XzK7EzgVTzDC8okXTPE_sCm1CRCq5Qdjs/gviz/tq?tqx=out:csv&sheet=Form%20responses%201"
-
 df = pd.read_csv(csv_url)
 df.columns = df.columns.str.strip()
 
 # ---------------------- OWNER CONFIG ----------------------
-OWNER_ACTIVITY_FORM_URL = "https://forms.gle/uWH3JUhz1jMh8t4PA"
 USE_SHEETS_API_FOR_ACTIVITY_POST = False  # keep False unless you want API posting
 
 # All students data (Excel from Google Drive link)
-
-
-# Replace this link with your uploaded Drive Excel link
-all_students_link = "https://docs.google.com/spreadsheets/d/1iXn5B9vmizIpOp_1LAjKjLxyTiEf67b1/gviz/tq?tqx=out:csv&sheet=Form%20responses%201"
 all_students_df = pd.read_csv(all_students_link)
 all_students_df.columns = all_students_df.columns.str.strip()
 
