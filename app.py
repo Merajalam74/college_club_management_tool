@@ -7,8 +7,6 @@ College Club Management Tool
 import streamlit as st
 import pandas as pd
 import altair as alt
-import requests
-import io
 
 # ---------------------- CONFIG ----------------------
 st.set_page_config(
@@ -17,47 +15,17 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# ---------------------- CUSTOM CSS ----------------------
-st.markdown("""
-<style>
-/* General UI tweaks */
-.stApp {
-    background-color: #f9f9f9;
-    color: #222;
-    font-family: "Helvetica Neue", sans-serif;
-}
-
-/* Sidebar styling */
-[data-testid="stSidebar"] {
-    background-color: #ffffff;
-    border-right: 1px solid #e0e0e0;
-}
-
-/* Table responsiveness */
-[data-testid="stDataFrame"] table {
-    font-size: 0.9rem !important;
-}
-
-@media (max-width: 768px) {
-    [data-testid="stSidebar"] {
-        width: 70% !important;
-        min-width: 250px !important;
-    }
-}
-</style>
-""", unsafe_allow_html=True)
-csv_url = st.secrets["links"]["responses_csv"]
-all_students_link = st.secrets["links"]["students_csv"]
-OWNER_ACTIVITY_FORM_URL = st.secrets["links"]["activity_form"]
 # ---------------------- DATA LOAD ----------------------
+# Load secrets
+csv_url = st.secrets["links"]["responses_csv"]
+students_url = st.secrets["links"]["students_csv"]
+owner_form_url = st.secrets["links"]["activity_form"]
+
+# Read data
 df = pd.read_csv(csv_url)
 df.columns = df.columns.str.strip()
 
-# ---------------------- OWNER CONFIG ----------------------
-USE_SHEETS_API_FOR_ACTIVITY_POST = False  # keep False unless you want API posting
-
-# All students data (Excel from Google Drive link)
-all_students_df = pd.read_csv(all_students_link)
+all_students_df = pd.read_csv(students_url)
 all_students_df.columns = all_students_df.columns.str.strip()
 
 # ---------------------- SIDEBAR MENU ----------------------
@@ -69,8 +37,7 @@ menu = st.sidebar.radio(
         "🏆 Search by Club",
         "✅ Students Joined At Least One Club",
         "🚫 Students Who Have Not Responded",
-        "🔁 Duplicate Registrations", 
-        "💬 Message Panel "
+        "💬 Message Panel"
     ]
 )
 
@@ -82,10 +49,11 @@ if menu == "🏠 Dashboard":
     total_responses = len(df)
     total_students = len(all_students_df) if not all_students_df.empty else "N/A"
 
-    st.metric("📥 Total Student joined Any Club", total_responses)
-    st.metric("👥 Total Students", total_students)
-    st.subheader("📊 Club Participation Comparison")
+    col1, col2 = st.columns(2)
+    col1.metric("📥 Total Student joined Any Club", total_responses)
+    col2.metric("👥 Total Students", total_students)
 
+    st.subheader("📊 Club Participation Comparison")
     if "Club 1" in df.columns and "Club 2" in df.columns:
         clubs = pd.concat([df["Club 1"], df["Club 2"]]).dropna()
         club_counts = clubs.value_counts().reset_index()
@@ -95,48 +63,39 @@ if menu == "🏠 Dashboard":
             alt.Chart(club_counts)
             .mark_bar()
             .encode(
-                x=alt.X("Club", sort="-y", title="Club"),
-                y=alt.Y("Count", title="Number of Students"),
+                x=alt.X("Club", sort="-y"),
+                y="Count",
                 tooltip=["Club", "Count"]
             )
-            .properties(width=600, height=400, title="Club Participation")
+            .properties(width=600, height=400)
         )
         st.altair_chart(chart, use_container_width=True)
-        
-    else:
-        st.warning("⚠️ Club columns not found in the sheet.")
-        
+
     if not df.empty:
         st.subheader("📊 Latest Responses")
-        st.dataframe(df.tail(5), use_container_width=True)
-        
+        st.dataframe(df.tail(5), width="stretch")
 
 # ---------------------- SEARCH BY REG NO ----------------------
 elif menu == "🔎 Search by Registration Number":
     st.title("🔎 Search by Registration Number")
     reg_no = st.text_input("Enter Registration Number:")
 
-    
-
     if st.button("🔍 Search"):
         if reg_no:
             if "Registration Number" in df.columns:
                 student_data = df[df["Registration Number"].astype(str) == reg_no]
-
                 if not student_data.empty:
                     st.success(f"✅ Found {len(student_data)} record(s)")
                     st.dataframe(
                         student_data[["Name", "Department", "Phone Number", "Club 1", "Club 2"]],
-                        use_container_width=True,
-                        height=(len(student_data) + 1) * 35
-                        )
+                        width="stretch"
+                    )
+                else:
+                    st.error("❌ No student found with this Registration Number.")
             else:
-                st.error("❌ No student found with this Registration Number.")
+                st.error("⚠️ Column 'Registration Number' not found in sheet.")
         else:
-            st.error("⚠️ Column 'Registration Number' not found in sheet.")
-    else:
-        st.warning("⚠️ Please enter a Registration Number before searching.")
-
+            st.warning("⚠️ Please enter a Registration Number before searching.")
 
 # ---------------------- SEARCH BY CLUB ----------------------
 elif menu == "🏆 Search by Club":
@@ -152,7 +111,6 @@ elif menu == "🏆 Search by Club":
             club_data = df[(df["Club 1"] == selected_club) | (df["Club 2"] == selected_club)]
 
             if not club_data.empty:
-               # st.success(f"✅ Found {len(club_data)} student(s) in {selected_club}")
                 st.table(club_data[["Name", "Registration Number", "Department"]])
                 unique_members = club_data.drop_duplicates(subset=["Registration Number"])
                 st.info(f"👥 Total Unique Members in **{selected_club}**: {len(unique_members)}")
@@ -164,11 +122,10 @@ elif menu == "🏆 Search by Club":
 # ---------------------- JOINED AT LEAST ONE CLUB ----------------------
 elif menu == "✅ Students Joined At Least One Club":
     st.title("✅ Students Joined At Least One Club")
-
     joined = df[(df["Club 1"].notna()) | (df["Club 2"].notna())]
     if not joined.empty:
         st.dataframe(joined[["Name", "Registration Number", "Department", "Club 1", "Club 2"]],
-                     use_container_width=True)
+                     width="stretch")
         st.info(f"👥 Total Students Joined At Least One Club: {len(joined)}")
     else:
         st.warning("No students have joined any club.")
@@ -185,46 +142,18 @@ elif menu == "🚫 Students Who Have Not Responded":
 
         if not non_responded.empty:
             st.dataframe(non_responded[["Name", "Registration Number", "Department"]],
-                         use_container_width=True)
+                         width="stretch")
             st.info(f"👥 Total Students Not Responded: {len(non_responded)}")
 
-            # Download option
             csv = non_responded.to_csv(index=False).encode("utf-8")
             st.download_button("📥 Download Non-Responded List", data=csv,
                                file_name="non_responded_students.csv", mime="text/csv")
         else:
             st.success("🎉 All students have responded!")
     else:
-        st.error("⚠️ Could not load All Students Excel. Please check the Drive link.")
-# ---------------------- DUPLICATE REGISTRATIONS ----------------------
-elif menu == "🔁 Duplicate Registrations":
-    st.title("🔁 Duplicate Registrations")
+        st.error("⚠️ Could not load All Students sheet. Please check the link.")
 
-    if "Registration Number" in df.columns:
-        duplicates = df[df.duplicated(subset=["Registration Number"], keep=False)]
-        
-        if not duplicates.empty:
-            st.warning("⚠️ Found students with duplicate registrations")
-            st.dataframe(
-                duplicates.sort_values("Registration Number"),
-                use_container_width=True
-            )
-
-            # Group to show how many times each reg no appears
-            dup_counts = duplicates["Registration Number"].value_counts().reset_index()
-            dup_counts.columns = ["Registration Number", "Count"]
-
-            st.subheader("📊 Duplicate Counts")
-            st.table(dup_counts)
-
-        else:
-            st.success("🎉 No duplicate registrations found!")
-    else:
-        st.error("⚠️ Column 'Registration Number' not found in the sheet.")        
-# ---------------------- CLUB OWNER PANEL ----------------------
-elif menu == "💬 Message Panel ":
+# ---------------------- MESSAGE PANEL ----------------------
+elif menu == "💬 Message Panel":
     st.title("💬 Message Panel")
-
-   
-    if st.button("📝 Open Activity Form"):
-        st.markdown(f"[Click here to fill the form]({OWNER_ACTIVITY_FORM_URL})", unsafe_allow_html=True)
+    st.markdown(f"[Click here to fill the form]({owner_form_url})", unsafe_allow_html=True)
