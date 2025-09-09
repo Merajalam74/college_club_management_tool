@@ -152,7 +152,41 @@ elif menu == "🚫 Students Who Have Not Responded":
             st.success("🎉 All students have responded!")
     else:
         st.error("⚠️ Could not load All Students sheet. Please check the link.")
+# ---------------------- DUPLICATE REGISTRATIONS ----------------------
+elif menu == "🌀 Duplicate Registrations":
+    st.title("🌀 Duplicate Registrations")
 
+    if "Registration Number" in df.columns:
+        duplicates = df[df.duplicated(subset=["Registration Number"], keep=False)]
+        if not duplicates.empty:
+            st.warning(f"⚠️ Found {len(duplicates)} duplicate records!")
+            st.dataframe(
+                duplicates[["Name", "Registration Number", "Department", "Club 1", "Club 2"]],
+                width="stretch"
+            )
+
+            # Show grouped duplicate summary
+            dup_summary = (
+                duplicates.groupby("Registration Number")
+                .size()
+                .reset_index(name="Count")
+                .query("Count > 1")
+            )
+            st.subheader("📊 Duplicate Summary")
+            st.table(dup_summary)
+
+            # Allow CSV download
+            csv = duplicates.to_csv(index=False).encode("utf-8")
+            st.download_button(
+                "📥 Download Duplicate Records",
+                data=csv,
+                file_name="duplicate_students.csv",
+                mime="text/csv"
+            )
+        else:
+            st.success("✅ No duplicate registrations found!")
+    else:
+        st.error("⚠️ 'Registration Number' column not found in the data.")
 # ---------------------- MESSAGE PANEL ----------------------
 elif menu == "💬 Message Panel":
     st.title("💬 Message Panel")
