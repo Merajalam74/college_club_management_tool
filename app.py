@@ -20,12 +20,23 @@ st.set_page_config(
 csv_url = st.secrets["links"]["responses_csv"]
 students_url = st.secrets["links"]["students_csv"]
 owner_form_url = st.secrets["links"]["activity_form"]
-@st.cache_data(ttl=60)
-# Read data
-df = pd.read_csv(csv_url)
-df.columns = df.columns.str.strip()
 
-all_students_df = pd.read_csv(students_url)
+@st.cache_data(ttl=60)
+def load_data():
+    df = pd.read_csv(csv_url)
+    df.columns = df.columns.str.strip()
+
+    all_students_df = pd.read_csv(students_url)
+    all_students_df.columns = all_students_df.columns.str.strip()
+
+    return df, all_students_df
+
+# Call the function
+df, all_students_df = load_data()
+
+
+# Read data
+df.columns = df.columns.str.strip()
 all_students_df.columns = all_students_df.columns.str.strip()
 
 # ---------------------- SIDEBAR MENU ----------------------
