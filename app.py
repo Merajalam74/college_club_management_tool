@@ -20,7 +20,7 @@ st.set_page_config(
 csv_url = st.secrets["links"]["responses_csv"]
 students_url = st.secrets["links"]["students_csv"]
 owner_form_url = st.secrets["links"]["activity_form"]
-@st.cache_data(ttl=30)
+@st.cache_data(ttl=60)
 # Read data
 df = pd.read_csv(csv_url)
 df.columns = df.columns.str.strip()
