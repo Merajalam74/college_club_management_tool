@@ -70,22 +70,6 @@ if menu == "🏠 Dashboard":
             .properties(width=600, height=400)
         )
         st.altair_chart(chart, use_container_width=True)
-    if "Club 1" in df.columns and "Club 2" in df.columns:
-        clubs = pd.concat([df["Club 1"], df["Club 2"]]).dropna()
-        club_counts = clubs.value_counts().reset_index()
-        club_counts.columns = ["Club", "Count"]
-
-        chart = (
-            alt.Chart(club_counts)
-            .mark_bar()
-            .encode(
-                x=alt.X("Club", sort="-y"),
-                y="Count",
-                tooltip=["Club", "Count"]
-            )
-            .properties(width=600, height=400)
-        )
-        st.altair_chart(chart, use_container_width=True)
 
         # ----- Club Participation Pie Chart -----
         st.subheader("🥧 Club Participation (Pie Chart)")
