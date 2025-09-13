@@ -143,6 +143,47 @@ if menu == "🏠 Dashboard":
             )
         )
         st.altair_chart(year_pie, use_container_width=True)
+    # ----- Year-wise Participation Percentage -----
+    if "Year" in all_students_df.columns and "Registration Number" in all_students_df.columns:
+        st.subheader("🥧 Year-wise Participation Percentage")
+
+        # Mark joined students
+        responded_reg_nos = df["Registration Number"].astype(str).unique()
+        all_students_df["Joined"] = all_students_df["Registration Number"].astype(str).isin(responded_reg_nos)
+
+        # Group by year
+        year_stats = all_students_df.groupby("Year")["Joined"].value_counts().unstack(fill_value=0)
+
+        # Prepare data for pie charts (one pie per year)
+        for year in year_stats.index:
+            year_data = pd.DataFrame({
+                "Status": ["Joined at least one club", "Not joined any club"],
+                "Count": [
+                    year_stats.loc[year, True] if True in year_stats.columns else 0,
+                    year_stats.loc[year, False] if False in year_stats.columns else 0
+                ]
+            })
+
+            total = year_data["Count"].sum()
+            joined_pct = (year_data.loc[year_data["Status"] == "Joined at least one club", "Count"].values[0] / total * 100) if total > 0 else 0
+            not_joined_pct = 100 - joined_pct
+
+            st.markdown(f"### 📌 Year {year}")
+            year_pie = (
+                alt.Chart(year_data)
+                .mark_arc()
+                .encode(
+                    theta="Count",
+                    color="Status",
+                    tooltip=["Status", "Count"]
+                )
+            )
+            st.altair_chart(year_pie, use_container_width=True)
+
+            st.info(
+                f"✅ {year_data.loc[0, 'Count']} students ({joined_pct:.2f}%) joined in Year {year}.\n\n"
+                f"🚫 {year_data.loc[1, 'Count']} students ({not_joined_pct:.2f}%) did not join in Year {year}."
+            )    
     if not df.empty:
         st.subheader("📊 Latest Responses")
         st.dataframe(df.tail(5), width="stretch")
