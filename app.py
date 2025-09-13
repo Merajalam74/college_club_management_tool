@@ -70,7 +70,95 @@ if menu == "🏠 Dashboard":
             .properties(width=600, height=400)
         )
         st.altair_chart(chart, use_container_width=True)
+    if "Club 1" in df.columns and "Club 2" in df.columns:
+        clubs = pd.concat([df["Club 1"], df["Club 2"]]).dropna()
+        club_counts = clubs.value_counts().reset_index()
+        club_counts.columns = ["Club", "Count"]
 
+        chart = (
+            alt.Chart(club_counts)
+            .mark_bar()
+            .encode(
+                x=alt.X("Club", sort="-y"),
+                y="Count",
+                tooltip=["Club", "Count"]
+            )
+            .properties(width=600, height=400)
+        )
+        st.altair_chart(chart, use_container_width=True)
+
+        # ----- Club Participation Pie Chart -----
+        st.subheader("🥧 Club Participation (Pie Chart)")
+        pie_chart = (
+            alt.Chart(club_counts)
+            .mark_arc()
+            .encode(
+                theta="Count",
+                color="Club",
+                tooltip=["Club", "Count"]
+            )
+        )
+        st.altair_chart(pie_chart, use_container_width=True)
+
+    # ----- One vs Two Club Participation -----
+    st.subheader("🥧 Students Joining One vs Two Clubs")
+    if "Club 1" in df.columns and "Club 2" in df.columns:
+        df["Club Count"] = df[["Club 1", "Club 2"]].notna().sum(axis=1)
+        club_count_stats = df["Club Count"].value_counts().reset_index()
+        club_count_stats.columns = ["Clubs Joined", "Students"]
+
+        club_count_pie = (
+            alt.Chart(club_count_stats)
+            .mark_arc()
+            .encode(
+                theta="Students",
+                color="Clubs Joined:N",
+                tooltip=["Clubs Joined", "Students"]
+            )
+        )
+        st.altair_chart(club_count_pie, use_container_width=True)
+
+    # ----- Department-wise Participation -----
+    if "Department" in df.columns:
+        st.subheader("🥧 Department-wise Club Participation")
+        dept_counts = df["Department"].value_counts().reset_index()
+        dept_counts.columns = ["Department", "Count"]
+
+        dept_pie = (
+            alt.Chart(dept_counts)
+            .mark_arc()
+            .encode(
+                theta="Count",
+                color="Department",
+                tooltip=["Department", "Count"]
+            )
+        )
+        st.altair_chart(dept_pie, use_container_width=True)
+
+    # ----- Year-wise Participation -----
+    if "Year" in all_students_df.columns:
+        st.subheader("🥧 Year-wise Club Participation")
+
+        # Merge responses with all students to get year info
+        merged = df.merge(
+            all_students_df[["Registration Number", "Year"]],
+            on="Registration Number",
+            how="left"
+        )
+
+        year_counts = merged["Year"].value_counts().reset_index()
+        year_counts.columns = ["Year", "Count"]
+
+        year_pie = (
+            alt.Chart(year_counts)
+            .mark_arc()
+            .encode(
+                theta="Count",
+                color="Year:N",
+                tooltip=["Year", "Count"]
+            )
+        )
+        st.altair_chart(year_pie, use_container_width=True)
     if not df.empty:
         st.subheader("📊 Latest Responses")
         st.dataframe(df.tail(5), width="stretch")
