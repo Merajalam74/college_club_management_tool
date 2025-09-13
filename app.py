@@ -16,11 +16,12 @@ st.set_page_config(
 )
 
 # ---------------------- DATA LOAD ----------------------
-# Load secrets
+# Load Url
 csv_url = st.secrets["links"]["responses_csv"]
 students_url = st.secrets["links"]["students_csv"]
 owner_form_url = st.secrets["links"]["activity_form"]
 
+#--------------data config------------------
 @st.cache_data(ttl=60)
 def load_data():
     df = pd.read_csv(csv_url)
@@ -254,7 +255,6 @@ elif menu == "✅ Students Joined At Least One Club":
     else:
         st.warning("No students have joined any club.")
 
-# ---------------------- NOT RESPONDED ----------------------
 # ---------------------- NOT RESPONDED (YEAR-WISE) ----------------------
 elif menu == "🚫 Students Who Have Not Responded":
     st.title("🚫 Students Who Have Not Responded (Year-wise)")
