@@ -278,7 +278,7 @@ elif menu == "🚫 Students Who Have Not Responded":
                         st.success(f"Total students from 1st year have not responded: {len(year_students)}")
                     elif(year==1):
                         st.success(f"Total students from 2nd year have not responded: {len(year_students)}")
-                    elif(year==3)
+                    elif(year==3):
                         st.success(f"Total students from 3rd year have not responded: {len(year_students)}")
                         
                 else:
