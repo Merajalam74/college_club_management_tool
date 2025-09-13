@@ -244,28 +244,54 @@ elif menu == "✅ Students Joined At Least One Club":
         st.warning("No students have joined any club.")
 
 # ---------------------- NOT RESPONDED ----------------------
+# ---------------------- NOT RESPONDED (YEAR-WISE) ----------------------
 elif menu == "🚫 Students Who Have Not Responded":
-    st.title("🚫 Students Who Have Not Responded")
+    st.title("🚫 Students Who Have Not Responded (Year-wise)")
 
-    if not all_students_df.empty and "Registration Number" in all_students_df.columns:
+    if not all_students_df.empty and "Registration Number" in all_students_df.columns and "Year" in all_students_df.columns:
         responded_reg_nos = df["Registration Number"].astype(str).unique()
         non_responded = all_students_df[
             ~all_students_df["Registration Number"].astype(str).isin(responded_reg_nos)
         ]
 
         if not non_responded.empty:
-            st.dataframe(non_responded[["Name", "Registration Number", "Department"]],
-                         width="stretch")
-            st.info(f"👥 Total Students Not Responded: {len(non_responded)}")
+            years = sorted(non_responded["Year"].dropna().unique())
+            for year in years:
+                st.subheader(f"📌 Year {year}")
+                year_students = non_responded[non_responded["Year"] == year]
 
-            csv = non_responded.to_csv(index=False).encode("utf-8")
-            st.download_button("📥 Download Non-Responded List", data=csv,
-                               file_name="non_responded_students.csv", mime="text/csv")
+                if not year_students.empty:
+                    st.dataframe(
+                        year_students[["Name", "Registration Number", "Department", "Year"]],
+                        width="stretch"
+                    )
+
+                    # Download button for each year
+                    csv = year_students.to_csv(index=False).encode("utf-8")
+                    st.download_button(
+                        label=f"📥 Download Year {year} Not Responded List",
+                        data=csv,
+                        file_name=f"non_responded_year_{year}.csv",
+                        mime="text/csv"
+                    )
+                else:
+                    st.info(f"✅ All students from Year {year} have responded.")
+
+            # Total summary
+            st.success(f"📊 Total Students Not Responded: {len(non_responded)}")
+
+            # Optional: download all non-responded students together
+            all_csv = non_responded.to_csv(index=False).encode("utf-8")
+            st.download_button(
+                label="📥 Download All Years (Combined)",
+                data=all_csv,
+                file_name="non_responded_all_years.csv",
+                mime="text/csv"
+            )
         else:
             st.success("🎉 All students have responded!")
     else:
-        st.error("⚠️ Could not load All Students sheet. Please check the link.")
-# ---------------------- DUPLICATE REGISTRATIONS ----------------------
+        st.error("⚠️ Could not load All Students sheet. Please check that 'Year' and 'Registration Number' columns exist.")
 elif menu == "🌀 Duplicate Registrations":
     st.title("🌀 Duplicate Registrations")
 
