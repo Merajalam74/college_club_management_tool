@@ -7,6 +7,9 @@ College Club Management Tool
 import streamlit as st
 import pandas as pd
 import altair as alt
+from streamlit_autorefresh import st_autorefresh
+
+st_autorefresh(interval=60 * 1000, key="dashboard_refresh")
 
 # ---------------------- CONFIG ----------------------
 st.set_page_config(
