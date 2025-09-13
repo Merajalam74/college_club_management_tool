@@ -274,6 +274,10 @@ elif menu == "🚫 Students Who Have Not Responded":
                         file_name=f"non_responded_year_{year}.csv",
                         mime="text/csv"
                     )
+                    st.markdown(
+                        f"<p style='color:green; font-weight:bold;'>📊 Total Students Not Responded in Year {year}: {len(year_data)}</p>",
+                        unsafe_allow_html=True
+                    )
                 else:
                     st.info(f"✅ All students from Year {year} have responded.")
 
