@@ -274,7 +274,13 @@ elif menu == "🚫 Students Who Have Not Responded":
                         file_name=f"non_responded_year_{year}.csv",
                         mime="text/csv"
                     )
-                    st.success(f"Total students from {year} year have not responded: {len(year_students)}")
+                    if(year==1):
+                        st.success(f"Total students from 1st year have not responded: {len(year_students)}")
+                    elif(year==1):
+                        st.success(f"Total students from 2nd year have not responded: {len(year_students)}")
+                    elif(year==3)
+                        st.success(f"Total students from 3rd year have not responded: {len(year_students)}")
+                        
                 else:
                     st.info(f"✅ All students from Year {year} have responded.")
 
