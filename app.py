@@ -298,7 +298,7 @@ elif menu == "🏆 Search by Club":
                # Download filtered CSV (only selected columns)
                 csv = display_data.to_csv(index=False).encode("utf-8")
                 st.download_button(
-                   label="📥 Download Filtered Club Members",
+                   label="📥 Download",
                    data=csv,
                    file_name=f"{selected_club}_members{'_year_' + selected_year if selected_year != '-- All Years --' else ''}.csv",
                    mime="text/csv"
