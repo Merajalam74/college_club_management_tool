@@ -20,7 +20,16 @@ st.set_page_config(
 csv_url = st.secrets["links"]["responses_csv"]
 students_url = st.secrets["links"]["students_csv"]
 owner_form_url = st.secrets["links"]["activity_form"]
+df["Registration Number"] = df["Registration Number"].astype(str).str.strip()
+all_students_df["Registration Number"] = all_students_df["Registration Number"].astype(str).str.strip()
 
+for c in ["Club 1", "Club 2"]:
+    if c in df.columns:
+        df[c] = df[c].astype(str).str.strip()
+        df.loc[df[c].str.lower().isin(["nan", "none", "nan.0", "na"]), c] = pd.NA
+if "Year" in all_students_df.columns:
+    all_students_df["Year"] = pd.to_numeric(all_students_df["Year"], errors="coerce").astype("Int64")
+    
 #--------------data config------------------
 @st.cache_data(ttl=60)
 def load_data():
@@ -228,22 +237,74 @@ elif menu == "🏆 Search by Club":
     st.title("🏆 Search by Club")
 
     if "Club 1" in df.columns and "Club 2" in df.columns:
-        all_clubs = pd.unique(df[["Club 1", "Club 2"]].values.ravel("K"))
-        all_clubs = [c for c in all_clubs if pd.notna(c)]
+        # build club list reliably
+        clubs_1 = df["Club 1"].dropna().unique().tolist()
+        clubs_2 = df["Club 2"].dropna().unique().tolist()
+        all_clubs = sorted({c for c in (clubs_1 + clubs_2) if c and str(c).strip().lower() not in ["nan", "none", "na"]})
 
-        selected_club = st.selectbox("Choose a Club:", ["-- Select Club --"] + sorted(all_clubs))
+        selected_club = st.selectbox("Choose a Club:", ["-- Select Club --"] + all_clubs)
+
+        # year options (from all_students_df) as clean strings
+        years = sorted(all_students_df["Year"].dropna().unique()) if "Year" in all_students_df.columns else []
+        year_options = ["-- All Years --"] + [str(int(y)) for y in years]
+        selected_year = st.selectbox("Filter by Year (optional):", year_options)
 
         if selected_club != "-- Select Club --":
-            club_data = df[(df["Club 1"] == selected_club) | (df["Club 2"] == selected_club)]
+            # Filter by club (normalize comparison)
+            club_mask = (
+                df["Club 1"].fillna("").str.strip() == selected_club
+            ) | (
+                df["Club 2"].fillna("").str.strip() == selected_club
+            )
+            club_data = df[club_mask].copy()
 
+            # Merge with Year info from all_students_df (bring Year into responses)
+            if "Registration Number" in all_students_df.columns and "Year" in all_students_df.columns:
+                # ensure both Registration Number columns are stripped strings (done above)
+                club_data = club_data.merge(
+                    all_students_df[["Registration Number", "Year"]],
+                    on="Registration Number",
+                    how="left",
+                    validate="m:1"  # many responses -> one student record
+                )
+
+                # normalize Year in merged frame too
+                club_data["Year"] = pd.to_numeric(club_data["Year"], errors="coerce").astype("Int64")
+
+            # Apply year filter (compare numerically where possible)
+            if selected_year != "-- All Years --":
+                try:
+                    sel_year_int = int(selected_year)
+                    club_data = club_data[club_data["Year"] == sel_year_int]
+                except Exception:
+                    # fallback to string compare (shouldn't be needed if Year numeric conversion worked)
+                    club_data = club_data[club_data["Year"].astype(str) == selected_year]
+
+            # Show results / message
             if not club_data.empty:
-                st.table(club_data[["Name", "Registration Number", "Department"]])
-                unique_members = club_data.drop_duplicates(subset=["Registration Number"])
-                st.info(f"👥 Total Unique Members in **{selected_club}**: {len(unique_members)}")
+                    # Keep only required columns
+                display_cols = ["Name", "Registration Number", "Department", "Year"]
+
+                # Some rows may miss a column -> safe filter
+                display_data = club_data[[c for c in display_cols if c in club_data.columns]].drop_duplicates()
+
+                st.dataframe(display_data, use_container_width=True)
+
+                st.info(f"👥 Total Unique Members in **{selected_club}** "
+                       f"{'(Year ' + selected_year + ')' if selected_year != '-- All Years --' else ''}: "
+                       f"{len(display_data)}")
+
+               # Download filtered CSV (only selected columns)
+                csv = display_data.to_csv(index=False).encode("utf-8")
+                st.download_button(
+                   label="📥 Download Filtered Club Members",
+                   data=csv,
+                   file_name=f"{selected_club}_members{'_year_' + selected_year if selected_year != '-- All Years --' else ''}.csv",
+                   mime="text/csv"
+                )
             else:
-                st.warning(f"No students found in {selected_club}.")
-    else:
-        st.error("⚠️ Club columns not found in sheet.")
+                st.warning(f"No students found in {selected_club} "
+                           f"{'(Year ' + selected_year + ')' if selected_year != '-- All Years --' else ''}.")
 
 # ---------------------- JOINED AT LEAST ONE CLUB ----------------------
 elif menu == "✅ Students Joined At Least One Club":
