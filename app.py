@@ -20,15 +20,7 @@ st.set_page_config(
 csv_url = st.secrets["links"]["responses_csv"]
 students_url = st.secrets["links"]["students_csv"]
 owner_form_url = st.secrets["links"]["activity_form"]
-df["Registration Number"] = df["Registration Number"].astype(str).str.strip()
-all_students_df["Registration Number"] = all_students_df["Registration Number"].astype(str).str.strip()
 
-for c in ["Club 1", "Club 2"]:
-    if c in df.columns:
-        df[c] = df[c].astype(str).str.strip()
-        df.loc[df[c].str.lower().isin(["nan", "none", "nan.0", "na"]), c] = pd.NA
-if "Year" in all_students_df.columns:
-    all_students_df["Year"] = pd.to_numeric(all_students_df["Year"], errors="coerce").astype("Int64")
     
 #--------------data config------------------
 @st.cache_data(ttl=60)
@@ -44,6 +36,15 @@ def load_data():
 # Call the function
 df, all_students_df = load_data()
 
+df["Registration Number"] = df["Registration Number"].astype(str).str.strip()
+all_students_df["Registration Number"] = all_students_df["Registration Number"].astype(str).str.strip()
+
+for c in ["Club 1", "Club 2"]:
+    if c in df.columns:
+        df[c] = df[c].astype(str).str.strip()
+        df.loc[df[c].str.lower().isin(["nan", "none", "nan.0", "na"]), c] = pd.NA
+if "Year" in all_students_df.columns:
+    all_students_df["Year"] = pd.to_numeric(all_students_df["Year"], errors="coerce").astype("Int64")
 
 # Read data
 df.columns = df.columns.str.strip()
